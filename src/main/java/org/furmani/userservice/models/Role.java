@@ -1,8 +1,6 @@
 package org.furmani.userservice.models;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,6 +10,11 @@ import lombok.Setter;
 public class Role extends BaseEntity {
     private String value;
 
-    @ManyToOne
-    private User user;
+    public Role(String role) {
+        value = role;
+    }
+
+    public Role() {
+
+    }
 }
