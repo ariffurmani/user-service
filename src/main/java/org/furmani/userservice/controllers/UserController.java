@@ -27,7 +27,7 @@ public class UserController {
 
     @PostMapping("/login")
     public String login(@RequestBody LoginRequestDto loginRequest) throws PasswordMismatchException {
-        return userService.login(loginRequest.getUsername(), loginRequest.getPassword());
+        return userService.login(loginRequest.getEmail(), loginRequest.getPassword());
     }
 
     @GetMapping("/validateToken")

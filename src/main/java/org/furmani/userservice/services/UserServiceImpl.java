@@ -1,5 +1,6 @@
 package org.furmani.userservice.services;
 
+import org.furmani.userservice.exceptions.InvalidCredentialsException;
 import org.furmani.userservice.exceptions.InvalidTokenException;
 import org.furmani.userservice.exceptions.PasswordMismatchException;
 import org.furmani.userservice.models.Role;
@@ -9,8 +10,11 @@ import org.furmani.userservice.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-import java.util.ArrayList;
+import io.jsonwebtoken.Jwts;
+
+import javax.crypto.SecretKey;
+
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements  UserService {
@@ -52,7 +56,31 @@ public class UserServiceImpl implements  UserService {
 
     @Override
     public String login(String username, String password) throws PasswordMismatchException {
-        return null;
+        Optional<User> userOpt = userRepository.findByEmail(username);
+        if (userOpt.isEmpty()) {
+            throw new InvalidCredentialsException("Invalid username or password");
+        }
+
+        User user = userOpt.get();
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new InvalidCredentialsException("Invalid username or password");
+        }
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, 30);
+        Date expiryDate = calendar.getTime();
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", user.getEmail());
+        claims.put("roles", user.getRoles());
+        claims.put("userId", user.getId());
+        claims.put("exp", expiryDate);
+
+        SecretKey key = Jwts.SIG.HS256.key().build();
+
+        return Jwts.builder().claims(claims)
+                .signWith(key)
+                .compact();
     }
 
     @Override
