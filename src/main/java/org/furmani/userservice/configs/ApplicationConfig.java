@@ -1,5 +1,7 @@
 package org.furmani.userservice.configs;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.MacAlgorithm;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -9,12 +11,20 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import javax.crypto.SecretKey;
+
 @Configuration
 public class ApplicationConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         // expose as the interface type (recommended) so other beans can autowire PasswordEncoder
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecretKey secretKey() {
+        MacAlgorithm algorithm = Jwts.SIG.HS256;
+        return algorithm.key().build();
     }
 
     @Bean

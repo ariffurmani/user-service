@@ -21,11 +21,14 @@ public class UserServiceImpl implements  UserService {
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
+    SecretKey secretKey;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                           RoleRepository roleRepository,  SecretKey secretKey) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
+        this.secretKey = secretKey;
     }
 
     @Override
@@ -76,10 +79,8 @@ public class UserServiceImpl implements  UserService {
         claims.put("userId", user.getId());
         claims.put("exp", expiryDate);
 
-        SecretKey key = Jwts.SIG.HS256.key().build();
-
         return Jwts.builder().claims(claims)
-                .signWith(key)
+                .signWith(secretKey)
                 .compact();
     }
 
