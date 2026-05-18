@@ -3,12 +3,17 @@ package org.furmani.userservice.controllers;
 import org.furmani.userservice.dtos.LoginRequestDto;
 import org.furmani.userservice.dtos.SignupRequestDto;
 import org.furmani.userservice.dtos.UserDto;
-import org.furmani.userservice.exceptions.InvalidTokenException;
-import org.furmani.userservice.exceptions.PasswordMismatchException;
+import org.furmani.userservice.exceptions.*;
 import org.furmani.userservice.models.User;
 import org.furmani.userservice.services.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST Controller for user authentication and management endpoints.
+ * All exceptions are handled globally by GlobalExceptionHandler.
+ */
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -19,20 +24,51 @@ public class UserController {
         this.userService = userService;
     }
 
+    /**
+     * Register a new user with the provided credentials.
+     *
+     * @param signupRequest contains name, email, password, and role
+     * @return the created user as a UserDto with HTTP 201 Created status
+     * @throws InvalidRequestException if any required field is missing or empty
+     * @throws UserAlreadyExistsException if a user with the email already exists
+     */
     @PostMapping("/signup")
-    public UserDto signUp(@RequestBody SignupRequestDto signupRequest) {
-        User user = userService.signup(signupRequest.getName(), signupRequest.getEmail(), signupRequest.getPassword(), signupRequest.getRole());
-        return UserDto.from(user);
+    public ResponseEntity<UserDto> signUp(@RequestBody SignupRequestDto signupRequest) {
+        User user = userService.signup(
+                signupRequest.getName(),
+                signupRequest.getEmail(),
+                signupRequest.getPassword(),
+                signupRequest.getRole()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserDto.from(user));
     }
 
+    /**
+     * Authenticate a user and return a JWT token.
+     *
+     * @param loginRequest contains email and password
+     * @return JWT token as response body with HTTP 200 OK status
+     * @throws InvalidRequestException if email or password is missing
+     * @throws InvalidCredentialsException if email not found or password is incorrect
+     */
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequestDto loginRequest) throws PasswordMismatchException {
-        return userService.login(loginRequest.getEmail(), loginRequest.getPassword());
+    public ResponseEntity<String> login(@RequestBody LoginRequestDto loginRequest) {
+        String token = userService.login(loginRequest.getEmail(), loginRequest.getPassword());
+        return ResponseEntity.ok(token);
     }
 
+    /**
+     * Validate a JWT token and return the associated user.
+     *
+     * @param token the JWT token as a query parameter
+     * @return the user associated with the token as a UserDto with HTTP 200 OK status
+     * @throws InvalidRequestException if token is missing or empty
+     * @throws InvalidTokenException if token is invalid, malformed, or expired
+     * @throws UserNotFoundException if the user in the token is not found
+     */
     @GetMapping("/validateToken")
-    public UserDto validateToken(@RequestParam String token) throws InvalidTokenException {
+    public ResponseEntity<UserDto> validateToken(@RequestParam String token) {
         User user = userService.validateToken(token);
-        return UserDto.from(user);
+        return ResponseEntity.ok(UserDto.from(user));
     }
 }
