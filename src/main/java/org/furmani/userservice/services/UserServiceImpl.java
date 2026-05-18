@@ -1,5 +1,7 @@
 package org.furmani.userservice.services;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
 import org.furmani.userservice.exceptions.InvalidCredentialsException;
 import org.furmani.userservice.exceptions.InvalidTokenException;
 import org.furmani.userservice.exceptions.PasswordMismatchException;
@@ -86,6 +88,19 @@ public class UserServiceImpl implements  UserService {
 
     @Override
     public User validateToken(String token) throws InvalidTokenException {
-        return null;
+        JwtParser jwtParser = Jwts.parser().verifyWith(secretKey).build();
+        Claims claims = jwtParser.parseSignedClaims(token).getPayload();
+
+        Long expiryDate = (Long) claims.get("exp");
+        expiryDate = expiryDate * 1000;
+        long currentDate = System.currentTimeMillis();
+
+        if (expiryDate > currentDate) {
+            String email = (String) claims.get("email");
+            Optional<User> user = userRepository.findByEmail(email);
+            return user.get();
+        } else {
+            throw new InvalidTokenException("Token has expired");
+        }
     }
 }
