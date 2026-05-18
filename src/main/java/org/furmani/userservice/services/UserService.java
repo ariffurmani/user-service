@@ -1,5 +1,6 @@
 package org.furmani.userservice.services;
 
+import org.furmani.userservice.dtos.AuthenticatedUser;
 import org.furmani.userservice.exceptions.*;
 import org.furmani.userservice.models.User;
 
@@ -37,14 +38,10 @@ public interface UserService {
     String login(String username, String password) throws PasswordMismatchException;
 
     /**
-     * Validates a JWT token and returns the associated user.
+     * Validates a JWT token and returns a lightweight authenticated user DTO.
      *
      * @param token the JWT token to validate (cannot be null or empty)
-     * @return the User associated with the token
-     * @throws InvalidRequestException if token is null or empty
-     * @throws InvalidTokenException if the token is invalid, malformed, or expired
-     * @throws UserNotFoundException if the user referenced in the token is not found in the database
-     * @throws RuntimeException if an unexpected error occurs during validation
+     * @return AuthenticatedUser containing the email and role names extracted from the token
      */
-    User validateToken(String token) throws InvalidTokenException;
+    AuthenticatedUser validateToken(String token) throws InvalidTokenException;
 }

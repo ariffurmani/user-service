@@ -3,6 +3,7 @@ package org.furmani.userservice.services;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.JwtException;
+import org.furmani.userservice.dtos.AuthenticatedUser;
 import org.furmani.userservice.exceptions.*;
 import org.furmani.userservice.models.Role;
 import org.furmani.userservice.models.User;
@@ -150,7 +151,7 @@ public class UserServiceImpl implements  UserService {
     }
 
     @Override
-    public User validateToken(String token) throws InvalidTokenException {
+    public AuthenticatedUser validateToken(String token) throws InvalidTokenException {
         logger.info("Validating token");
 
         // Input validation
@@ -170,9 +171,9 @@ public class UserServiceImpl implements  UserService {
                 throw new InvalidTokenException("Token is missing expiry claim");
             }
 
-            Long expiryDate;
+            long expiryDateMillis;
             try {
-                expiryDate = ((Number) expObject).longValue() * 1000; // Convert from seconds to milliseconds
+                expiryDateMillis = ((Number) expObject).longValue() * 1000L; // Convert from seconds to milliseconds
             } catch (ClassCastException e) {
                 logger.warn("Token validation failed: exp claim is not a valid number");
                 throw new InvalidTokenException("Token has invalid expiry format");
@@ -181,27 +182,35 @@ public class UserServiceImpl implements  UserService {
             long currentDate = System.currentTimeMillis();
 
             // Check if token has expired
-            if (expiryDate <= currentDate) {
-                logger.warn("Token validation failed: token has expired. Expiry: {}, Current: {}", expiryDate, currentDate);
+            if (expiryDateMillis <= currentDate) {
+                logger.warn("Token validation failed: token has expired. Expiry: {}, Current: {}", expiryDateMillis, currentDate);
                 throw new InvalidTokenException("Token has expired");
             }
 
-            // Extract email from claims
+            // Extract user details from claims
             String email = (String) claims.get("email");
             if (email == null || email.trim().isEmpty()) {
                 logger.warn("Token validation failed: email claim is missing");
                 throw new InvalidTokenException("Token is missing email claim");
             }
 
-            // Fetch user from repository
-            Optional<User> userOpt = userRepository.findByEmail(email);
-            if (userOpt.isEmpty()) {
-                logger.warn("Token validation failed: user with email {} not found in database", email);
-                throw new UserNotFoundException("User associated with token not found");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rolesList = (List<Map<String, Object>>) claims.get("roles");
+
+            // Build AuthenticatedUser DTO from claims
+            AuthenticatedUser authUser = new AuthenticatedUser();
+            authUser.setEmail(email);
+            List<String> roleNames = new ArrayList<>();
+            if (rolesList != null) {
+                for (Map<String, Object> roleMap : rolesList) {
+                    Object value = roleMap.get("value");
+                    if (value != null) roleNames.add(value.toString());
+                }
             }
+            authUser.setRoles(roleNames);
 
             logger.info("Token validation successful for user: {}", email);
-            return userOpt.get();
+            return authUser;
         } catch (InvalidTokenException | UserNotFoundException e) {
             throw e;
         } catch (JwtException e) {

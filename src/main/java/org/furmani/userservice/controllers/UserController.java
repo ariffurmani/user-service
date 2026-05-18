@@ -3,6 +3,7 @@ package org.furmani.userservice.controllers;
 import org.furmani.userservice.dtos.LoginRequestDto;
 import org.furmani.userservice.dtos.SignupRequestDto;
 import org.furmani.userservice.dtos.UserDto;
+import org.furmani.userservice.dtos.AuthenticatedUser;
 import org.furmani.userservice.exceptions.*;
 import org.furmani.userservice.models.User;
 import org.furmani.userservice.services.UserService;
@@ -58,17 +59,16 @@ public class UserController {
     }
 
     /**
-     * Validate a JWT token and return the associated user.
+     * Validate a JWT token and return basic authenticated user info (email + role names).
      *
      * @param token the JWT token as a query parameter
-     * @return the user associated with the token as a UserDto with HTTP 200 OK status
+     * @return the authenticated user as an AuthenticatedUser DTO with HTTP 200 OK status
      * @throws InvalidRequestException if token is missing or empty
      * @throws InvalidTokenException if token is invalid, malformed, or expired
-     * @throws UserNotFoundException if the user in the token is not found
      */
     @GetMapping("/validateToken")
-    public ResponseEntity<UserDto> validateToken(@RequestParam String token) {
-        User user = userService.validateToken(token);
-        return ResponseEntity.ok(UserDto.from(user));
+    public ResponseEntity<AuthenticatedUser> validateToken(@RequestParam String token) {
+        AuthenticatedUser authUser = userService.validateToken(token);
+        return ResponseEntity.ok(authUser);
     }
 }
